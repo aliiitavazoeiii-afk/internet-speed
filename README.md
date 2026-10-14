@@ -1,7 +1,3 @@
-# internet-speed — NetScope Mobile
-
-> نسخه موبایلی آزمایش سرعت اینترنت و VPN با مقایسه دو حالت، شامل دانلود، آپلود، پینگ، جیتر و تحلیل نتایج.
-
 # NetScope Mobile v2
 
 وب‌اپ تست سرعت اختصاصی موبایل با تشخیص خودکار اتصال احتمالی VPN از کشور IP.
@@ -9,7 +5,7 @@
 ## اجرا
 
 ```bash
-unzip -o vpn-diagnostics.zip -d /opt
+unzip -o vpn-diagnostics-mobile-v2.zip -d /opt
 cd /opt/vpn-diagnostics
 docker compose up -d --build
 curl -s http://127.0.0.1:8097/api/health
@@ -33,14 +29,3 @@ npm test
 ```
 
 فونت رابط Vazirmatn و فونت آفلاین Noto Sans Arabic به‌عنوان fallback است.
-## استقرار از مخزن GitHub
-
-```bash
-cd /opt
-git clone https://github.com/aliiitavazoeiii-afk/internet-speed.git
-cd internet-speed
-docker compose up -d --build
-curl -fsS http://127.0.0.1:8097/api/health
-```
-
-**نکته:** تا زمانی که سورس برنامه (`server.mjs`, `public/`, `Dockerfile`, `compose.yaml`) در مخزن قرار نگیرد، دستور Docker کار نخواهد کرد. Repo ابتدا فقط فایل راهنما دارد.
