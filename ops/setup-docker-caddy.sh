@@ -59,8 +59,28 @@ if [[ -e "$OVERRIDE" ]]; then cp -a "$OVERRIDE" "$OVERRIDE.bak.$(date +%Y%m%d-%H
 mv "$TMP" "$OVERRIDE"
 docker compose config --quiet || die "Compose validation failed"
 docker compose up -d --no-build "$APP" || die "Unable to attach NetScope to Caddy network"
-docker exec "$CADDY" sh -c 'wget -qO- http://vpn-diagnostics:8097/api/health' \
-  | grep -q '"ok":true' || die "Caddy cannot access NetScope on Docker network"
+echo "=== WAITING FOR NETSCOPE (up to 90 seconds) ==="
+READY=0
+for _ in $(seq 1 45); do
+  # Compose may have just recreated the container. Docker network DNS can resolve
+  # before Node.js starts listening; retry both local and in-network probes.
+  PROBE="$(docker exec "$CADDY" sh -c 'wget -T 3 -qO- http://vpn-diagnostics:8097/api/health' 2>/dev/null || true)"
+  if [[ "$PROBE" == *'"ok":true'* ]]; then
+    READY=1
+    break
+  fi
+  sleep 2
+done
+if [[ "$READY" != 1 ]]; then
+  echo "NetScope container state:"
+  docker inspect -f '{{.State.Status}} / {{if .State.Health}}{{.State.Health.Status}}{{else}}no health status{{end}}' "$APP" || true
+  echo "NetScope recent logs:"
+  docker logs --tail=80 "$APP" || true
+  echo "Local health:"
+  curl -sS --max-time 5 -i http://127.0.0.1:8097/api/health || true
+  die "Caddy cannot access NetScope after 90 seconds; Caddyfile unchanged"
+fi
+echo "NetScope reachable from Caddy"
 
 if grep -Eq '^[[:space:]]*test\.usersmanager\.ir[[:space:]]*\{' "$CADDYFILE"; then
   echo "Caddyfile already has a domain block; leaving it untouched"
